@@ -1,0 +1,62 @@
+#Simple model with pure counterflow 
+# Written by Oprah Lewat
+# 11 August 2024
+import numpy as np 
+import math 
+import scipy.optimize
+import matplotlib.pyplot as plt 
+import CoolProp 
+
+epsilon = 0.90
+D = 1.222e-3 #m
+L = 1 #m
+rho_CO2 = 0.6937 #kg/m^3
+nu_CO2 = 4.924e-5 #m^2/s
+Pr_CO2 = 0.7460
+k_CO2 = 0.05293 #W/mK
+rho_SS = 1730.56 #kg/m^3
+mu_SS = 3.754e-3 #kg/ms
+k_SS = 0.450 #W/mK
+t_p = 1.63e-3 #m 
+k_p = 14.4 #W/mK
+
+#Inputs for the solar salt (SS)
+m_dot_SS = 566 #kg/s
+T_in_SS = 565 #C
+cp_SS = 1540.16 #J/kgK
+
+#Inputs for the sCO2
+m_dot_CO2 = 567 #kg/s
+T_in_CO2 = 435 #C
+cp_CO2 = 1170 #J/kgK
+
+# Find the UA value 
+A = math.pi*D*L*0.5 #m^2 
+V_CO2 = m_dot_CO2/(rho_CO2*A)
+Re_CO2 = (V_CO2*D)/nu_CO2
+Nu_sCO2 = 0.023*(Re_CO2**0.8)*(Pr_CO2**0.4)
+h_CO2 = (Nu_sCO2*k_CO2)/D   
+
+V_SS = m_dot_SS/(rho_SS*A)
+Re_SS = (V_SS*D*rho_SS)/mu_SS
+Pr_SS = (cp_SS*mu_SS)/k_SS
+Nu_SS = 0.023*(Re_SS**0.8)*(Pr_SS**0.4)
+h_SS = (Nu_SS*k_SS)/D
+
+UA = (((h_CO2*A)**(-1))+(t_p/(k_p*A))+((h_SS*A)**(-1)))**(-1)
+
+# Solve for Q_dot
+C_min = m_dot_SS * cp_SS
+C_max = m_dot_CO2 * cp_CO2
+Q_dot_max = C_min * (T_in_SS - T_in_CO2)
+Q_dot = epsilon * Q_dot_max
+Q_dot_1 = UA*(T_in_SS-T_in_CO2)
+
+#Find sCO2 exit temperature 
+T_out_CO2 = ((Q_dot/C_max)+(T_in_CO2+273.15))-273.15
+
+
+print('Q_dot = {:.3f}[MW]'.format(Q_dot/1e6))
+print('T_out_CO2 = {:.3f}[C]'.format(T_out_CO2))
+print('UA = {:.3f}[W/m^2K]'.format(UA))
+print('Q_dot_1 = {:.3f}[MW]'.format(Q_dot_1/1e6))
